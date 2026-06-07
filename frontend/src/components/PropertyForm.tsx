@@ -1,11 +1,14 @@
-import { useState } from 'react'
+import { useState, KeyboardEvent } from 'react'
 import { Property, PropertyStatus } from '@/types'
+import { X } from 'lucide-react'
 
 interface PropertyFormProps {
   onSubmit: (data: Partial<Property>) => void
   onCancel: () => void
   initial?: Partial<Property>
 }
+
+const PRESET_TAGS = ['近地铁', '精装修', '押一付一', '朝南', '有电梯', '拎包入住', '近商圈', '安静', '采光好', '新装修']
 
 export default function PropertyForm({ onSubmit, onCancel, initial }: PropertyFormProps) {
   const [form, setForm] = useState({
@@ -20,10 +23,39 @@ export default function PropertyForm({ onSubmit, onCancel, initial }: PropertyFo
     status: initial?.status || 'viewing' as PropertyStatus,
     notes: initial?.notes || '',
   })
+  const [tags, setTags] = useState<string[]>(initial?.tags || [])
+  const [tagInput, setTagInput] = useState('')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setForm(prev => ({ ...prev, [name]: value }))
+  }
+
+  const addTag = (tag: string) => {
+    const trimmed = tag.trim()
+    if (trimmed && !tags.includes(trimmed)) {
+      setTags([...tags, trimmed])
+    }
+    setTagInput('')
+  }
+
+  const removeTag = (tag: string) => {
+    setTags(tags.filter(t => t !== tag))
+  }
+
+  const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      addTag(tagInput)
+    }
+  }
+
+  const togglePresetTag = (tag: string) => {
+    if (tags.includes(tag)) {
+      removeTag(tag)
+    } else {
+      addTag(tag)
+    }
   }
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,6 +75,7 @@ export default function PropertyForm({ onSubmit, onCancel, initial }: PropertyFo
       ...form,
       rent: Number(form.rent),
       size: form.size ? Number(form.size) : undefined,
+      tags,
     })
   }
 
@@ -109,6 +142,62 @@ export default function PropertyForm({ onSubmit, onCancel, initial }: PropertyFo
           className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
         {form.photos && (
           <img src={form.photos} alt="预览" className="mt-2 w-32 h-32 object-cover rounded-lg" />
+        )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">标签</label>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {PRESET_TAGS.map(tag => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => togglePresetTag(tag)}
+              className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                tags.includes(tag)
+                  ? 'bg-indigo-500 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2 mb-3">
+          <input
+            type="text"
+            value={tagInput}
+            onChange={e => setTagInput(e.target.value)}
+            onKeyDown={handleTagKeyDown}
+            placeholder="输入自定义标签，按回车添加"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          />
+          <button
+            type="button"
+            onClick={() => addTag(tagInput)}
+            className="px-4 py-2 text-sm text-white bg-indigo-500 rounded-lg hover:bg-indigo-600 transition-colors"
+          >
+            添加
+          </button>
+        </div>
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {tags.map(tag => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1 px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded-full"
+              >
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => removeTag(tag)}
+                  className="hover:text-indigo-900"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
         )}
       </div>
 

@@ -36,6 +36,7 @@ router.get('/', (req: any, res) => {
     landlordPhone: p.landlord_phone,
     status: p.status,
     notes: p.notes,
+    tags: p.tags ? JSON.parse(p.tags) : [],
     createdAt: p.created_at
   })))
 })
@@ -60,20 +61,21 @@ router.get('/:id', (req: any, res) => {
     landlordPhone: property.landlord_phone,
     status: property.status,
     notes: property.notes,
+    tags: property.tags ? JSON.parse(property.tags) : [],
     createdAt: property.created_at
   })
 })
 
 router.post('/', (req: any, res) => {
-  const { address, area, rent, layout, size, photos, landlordName, landlordPhone, status, notes } = req.body
+  const { address, area, rent, layout, size, photos, landlordName, landlordPhone, status, notes, tags } = req.body
   if (!address || !area || !rent || !layout) {
     return res.status(400).json({ error: '请填写必填项' })
   }
 
   const result = db.prepare(`
-    INSERT INTO properties (user_id, address, area, rent, layout, size, photos, landlord_name, landlord_phone, status, notes)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(req.userId, address, area, rent, layout, size || null, photos || null, landlordName || null, landlordPhone || null, status || 'viewing', notes || null)
+    INSERT INTO properties (user_id, address, area, rent, layout, size, photos, landlord_name, landlord_phone, status, notes, tags)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(req.userId, address, area, rent, layout, size || null, photos || null, landlordName || null, landlordPhone || null, status || 'viewing', notes || null, tags ? JSON.stringify(tags) : null)
 
   const property: any = db.prepare('SELECT * FROM properties WHERE id = ?').get(result.lastInsertRowid)
   res.json({
@@ -89,18 +91,19 @@ router.post('/', (req: any, res) => {
     landlordPhone: property.landlord_phone,
     status: property.status,
     notes: property.notes,
+    tags: property.tags ? JSON.parse(property.tags) : [],
     createdAt: property.created_at
   })
 })
 
 router.put('/:id', (req: any, res) => {
-  const { address, area, rent, layout, size, photos, landlordName, landlordPhone, status, notes } = req.body
+  const { address, area, rent, layout, size, photos, landlordName, landlordPhone, status, notes, tags } = req.body
 
   db.prepare(`
     UPDATE properties SET
-    address = ?, area = ?, rent = ?, layout = ?, size = ?, photos = ?, landlord_name = ?, landlord_phone = ?, status = ?, notes = ?
+    address = ?, area = ?, rent = ?, layout = ?, size = ?, photos = ?, landlord_name = ?, landlord_phone = ?, status = ?, notes = ?, tags = ?
     WHERE id = ? AND user_id = ?
-  `).run(address, area, rent, layout, size || null, photos || null, landlordName || null, landlordPhone || null, status || 'viewing', notes || null, req.params.id, req.userId)
+  `).run(address, area, rent, layout, size || null, photos || null, landlordName || null, landlordPhone || null, status || 'viewing', notes || null, tags ? JSON.stringify(tags) : null, req.params.id, req.userId)
 
   const property: any = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id)
   res.json({
@@ -116,6 +119,7 @@ router.put('/:id', (req: any, res) => {
     landlordPhone: property.landlord_phone,
     status: property.status,
     notes: property.notes,
+    tags: property.tags ? JSON.parse(property.tags) : [],
     createdAt: property.created_at
   })
 })

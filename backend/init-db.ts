@@ -26,10 +26,18 @@ db.exec(`
     landlord_phone TEXT,
     status TEXT DEFAULT 'viewing',
     notes TEXT,
+    tags TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
   )
 `)
+
+// Migration: add tags column if not exists
+try {
+  db.prepare('ALTER TABLE properties ADD COLUMN tags TEXT').run()
+} catch (e) {
+  // Column already exists, ignore
+}
 
 // Viewing notes table
 db.exec(`

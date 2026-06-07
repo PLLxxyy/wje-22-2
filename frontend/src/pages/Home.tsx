@@ -15,7 +15,16 @@ export default function Home() {
   const [minRent, setMinRent] = useState('')
   const [maxRent, setMaxRent] = useState('')
   const [areaFilter, setAreaFilter] = useState('')
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
+
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>()
+    properties.forEach(p => {
+      p.tags?.forEach(tag => tagSet.add(tag))
+    })
+    return Array.from(tagSet)
+  }, [properties])
 
   const filtered = useMemo(() => {
     let result = [...properties]
@@ -27,6 +36,9 @@ export default function Home() {
     if (minRent) result = result.filter(p => p.rent >= Number(minRent))
     if (maxRent) result = result.filter(p => p.rent <= Number(maxRent))
     if (areaFilter) result = result.filter(p => p.area.includes(areaFilter))
+    if (selectedTags.length > 0) {
+      result = result.filter(p => selectedTags.some(tag => p.tags?.includes(tag)))
+    }
 
     if (sortBy === 'score') {
       result.sort((a, b) => (b.overallScore || 0) - (a.overallScore || 0))
@@ -35,7 +47,13 @@ export default function Home() {
     }
 
     return result
-  }, [properties, sortBy, statusFilter, minRent, maxRent, areaFilter])
+  }, [properties, sortBy, statusFilter, minRent, maxRent, areaFilter, selectedTags])
+
+  const toggleTagFilter = (tag: string) => {
+    setSelectedTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    )
+  }
 
   const avgScore = (property: Property) => {
     // This would come from notes in a real app
@@ -103,37 +121,60 @@ export default function Home() {
         </div>
 
         {showFilters && (
-          <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">最低租金</label>
-              <input
-                type="number"
-                value={minRent}
-                onChange={e => setMinRent(e.target.value)}
-                placeholder="元/月"
-                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg"
-              />
+          <div className="mt-4 pt-4 border-t border-gray-100 space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">最低租金</label>
+                <input
+                  type="number"
+                  value={minRent}
+                  onChange={e => setMinRent(e.target.value)}
+                  placeholder="元/月"
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">最高租金</label>
+                <input
+                  type="number"
+                  value={maxRent}
+                  onChange={e => setMaxRent(e.target.value)}
+                  placeholder="元/月"
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">区域</label>
+                <input
+                  type="text"
+                  value={areaFilter}
+                  onChange={e => setAreaFilter(e.target.value)}
+                  placeholder="如：朝阳区"
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">最高租金</label>
-              <input
-                type="number"
-                value={maxRent}
-                onChange={e => setMaxRent(e.target.value)}
-                placeholder="元/月"
-                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">区域</label>
-              <input
-                type="text"
-                value={areaFilter}
-                onChange={e => setAreaFilter(e.target.value)}
-                placeholder="如：朝阳区"
-                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg"
-              />
-            </div>
+            {allTags.length > 0 && (
+              <div>
+                <label className="block text-xs text-gray-500 mb-2">标签筛选</label>
+                <div className="flex flex-wrap gap-2">
+                  {allTags.map(tag => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleTagFilter(tag)}
+                      className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                        selectedTags.includes(tag)
+                          ? 'bg-indigo-500 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -159,6 +200,20 @@ export default function Home() {
               </div>
               <p className="text-sm text-gray-500 mb-2">{property.area} · {property.layout} · {property.size}㎡</p>
               <p className="text-lg font-bold text-indigo-600 mb-2">{formatCurrency(property.rent)}<span className="text-sm font-normal text-gray-400">/月</span></p>
+              {property.tags && property.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {property.tags.slice(0, 3).map(tag => (
+                    <span key={tag} className="px-2 py-0.5 text-xs bg-indigo-50 text-indigo-600 rounded-full">
+                      {tag}
+                    </span>
+                  ))}
+                  {property.tags.length > 3 && (
+                    <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-500 rounded-full">
+                      +{property.tags.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />

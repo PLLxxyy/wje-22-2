@@ -127,6 +127,16 @@ export default function PropertyDetail() {
               {formatCurrency(property.rent)}<span className="text-base font-normal text-gray-400">/月</span>
             </p>
 
+            {property.tags && property.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {property.tags.map(tag => (
+                  <span key={tag} className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded-full">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <User className="w-4 h-4" />

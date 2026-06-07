@@ -19,6 +19,7 @@ export interface Property {
   landlordPhone: string
   status: PropertyStatus
   notes?: string
+  tags?: string[]
   createdAt: string
 }
 
